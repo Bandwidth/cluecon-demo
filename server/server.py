@@ -46,7 +46,8 @@ def executeFlow(flow, nodeid, trigger_id, request):
                     auth=u_auth,
                     json=body
                 )
-                print(r)
+                return_url = r.headers['location']
+                trigger_id = return_url.split("/")[-1]
             else:
                 print("Only GET and POST http methods are supported")
                 exit(-1)
