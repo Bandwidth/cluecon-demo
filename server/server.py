@@ -3,7 +3,7 @@ import time
 import requests
 import sys
 import json
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_from_directory
 
 app = Flask(__name__, static_folder='../static/Build', template_folder='../static')
 
@@ -97,6 +97,10 @@ def executeCallFlow():
         return executeFlow(flows['Call'], 0, call_id, request) 
     else:
         return '', 200
+
+@app.route('/static/TemplateData/<path:filename>')
+def custom_static(filename):
+    return send_from_directory('../static/TemplateData', filename)
 
 if __name__ == '__main__':
     app.run()
