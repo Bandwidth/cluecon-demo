@@ -1,0 +1,13 @@
+{
+"companyName": "Bandwidth",
+"productName": "AppBuilder",
+"dataUrl": "appbuilder.data.unityweb",
+"asmCodeUrl": "appbuilder.asm.code.unityweb",
+"asmMemoryUrl": "appbuilder.asm.memory.unityweb",
+"asmFrameworkUrl": "appbuilder.asm.framework.unityweb",
+"TOTAL_MEMORY": 268435456,
+"graphicsAPI": ["WebGL 2.0", "WebGL 1.0"],
+"webglContextAttributes": {"preserveDrawingBuffer": false},
+"splashScreenStyle": "Light",
+"backgroundColor": "#FFFFFF"
+}
