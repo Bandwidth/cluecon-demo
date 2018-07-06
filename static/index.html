@@ -10,6 +10,11 @@
     <script src="Build/UnityLoader.js"></script>
     <script>
       var gameInstance = UnityLoader.instantiate("gameContainer", "Build/appbuilder.json", {onProgress: UnityProgress});
+      var evtSrc = new EventSource("/sse_push");
+
+      evtSrc.onmessage = function(e) {
+          alert(e.data);
+      };
     </script>
   </head>
   <body>
