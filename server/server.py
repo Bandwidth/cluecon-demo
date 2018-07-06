@@ -38,8 +38,8 @@ def executeFlow(flow, nodeid, trigger_id, request):
         if method.lower() == 'wait':
             time.sleep(int(node['seconds']))
         else:
-            url = node['url'].replace("<triggerId>", trigger_id)
-            url = url.replace("<userid>", BANDWIDTH_USER_ID)
+            url = node['url'].replace("<trigger_id>", trigger_id)
+            url = url.replace("<user_id>", BANDWIDTH_USER_ID)
             token = BANDWIDTH_API_TOKEN
             secret = BANDWIDTH_API_SECRET
             u_auth = (token, secret)
