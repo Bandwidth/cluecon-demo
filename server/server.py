@@ -1,4 +1,4 @@
-import os 
+import os
 import time
 import requests
 import sys
@@ -6,6 +6,15 @@ import json
 from flask import Flask, render_template, request, send_from_directory
 
 app = Flask(__name__, static_folder='../static/Build', template_folder='../static')
+
+try:
+    BANDWIDTH_USER_ID = os.environ['BANDWIDTH_USER_ID']
+    BANDWIDTH_API_TOKEN = os.environ['BANDWIDTH_API_TOKEN']
+    BANDWIDTH_API_SECRET = os.environ['BANDWIDTH_API_SECRET']
+
+except KeyError:
+    print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, and BANDWIDTH_API_SECRET must be set")
+    sys.exit(-1)
 
 """
 Dictionary to hold flow json for trigger types: Call, SMS, and Now
@@ -29,9 +38,10 @@ def executeFlow(flow, nodeid, trigger_id, request):
         if method.lower() == 'wait':
             time.sleep(int(node['seconds']))
         else:
-            url = node['url'].replace("<triggerId>",trigger_id)
-            token = node['token']
-            secret = node['secret']
+            url = node['url'].replace("<triggerId>", trigger_id)
+            url = url.replace("<userid>", BANDWIDTH_USER_ID)
+            token = BANDWIDTH_API_TOKEN
+            secret = BANDWIDTH_API_SECRET
             u_auth = (token, secret)
             if method.lower() == 'get':
                 r = requests.get(
@@ -46,6 +56,7 @@ def executeFlow(flow, nodeid, trigger_id, request):
                     auth=u_auth,
                     json=body
                 )
+                print(r)
                 if "location" in r.headers:
                    return_url = r.headers['location']
                    trigger_id = return_url.split("/")[-1]
