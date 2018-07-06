@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Unity WebGL Player | AppBuilder</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-    <script src="TemplateData/UnityProgress.js"></script>  
+    <link rel="shortcut icon" href="{{ url_for('custom_static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('custom_static', filename='style.css') }}">
+    <script src="{{ url_for('custom_static', filename='UnityProgress.js') }}"></script>
     <script src="Build/UnityLoader.js"></script>
     <script>
       var gameInstance = UnityLoader.instantiate("gameContainer", "Build/appbuilder.json", {onProgress: UnityProgress});
