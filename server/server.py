@@ -48,7 +48,6 @@ def executeFlow(flow, nodeid, trigger_id, request):
                     url,
                     auth=u_auth
                 )
-                print(r.json())
             elif method.lower() == 'post':
                 body = node['body']
                 r = requests.post(
@@ -56,7 +55,6 @@ def executeFlow(flow, nodeid, trigger_id, request):
                     auth=u_auth,
                     json=body
                 )
-                print(r)
                 if "location" in r.headers:
                    return_url = r.headers['location']
                    trigger_id = return_url.split("/")[-1]
