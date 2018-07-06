@@ -3,7 +3,10 @@ import time
 import requests
 import sys
 import json
-from flask import Flask, render_template, request, send_from_directory
+import gevent
+from gevent.pywsgi import WSGIServer
+from gevent.queue import Queue
+from flask import Flask, render_template, request, send_from_directory, Response
 
 app = Flask(__name__, static_folder='../static/Build', template_folder='../static')
 
@@ -25,6 +28,7 @@ Dictionary to hold flow json for trigger types: Call, SMS, and Now
 """
 
 flows = {}
+subscriptions = [Queue()]
 
 """
 Main engine that processes flow json and sends requests or performs
@@ -32,9 +36,14 @@ specified actions defined by flow.
 """
 
 def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
+    def notify(node):
+        for sub in subscriptions[:]:
+            sub.put(node)
+
     nodes = flow['nodes']
     for i in range(int(nodeid), len(nodes)):
         node = nodes[i]
+        gevent.spawn(notify(node))
         method = node['method']
         if method.lower() == 'wait':
             time.sleep(int(node['seconds']))
@@ -134,8 +143,44 @@ def executeCallFlow():
 
 @app.route('/static/TemplateData/<path:filename>')
 def custom_static(filename):
-    return send_from_directory('../static/TemplateData', filename)
+   return send_from_directory('../static/TemplateData', filename)
+
+class ServerSentEvent(object):
+
+    def __init__(self, data):
+        self.data = data
+        self.event = None
+        self.id = None
+        self.desc_map = {
+            self.data : "data",
+            self.event : "event",
+            self.id : "id"
+        }
+
+    def encode(self):
+        if not self.data:
+            return ""
+        lines = ["%s: %s" % (v, k)
+                 for k, v in self.desc_map.items() if k]
+
+        return "%s\n\n" % "\n".join(lines)
+
+@app.route('/sse_push')
+def sse_push():
+    def gen():
+        q = Queue()
+        subscriptions.append(q)
+        try:
+            while True:
+                result = q.get()
+                ev = ServerSentEvent(str(result))
+                yield ev.encode()
+        except GeneratorExit:
+            subscriptions.remove(q)
+
+    return Response(gen(), mimetype="text/event-stream")
 
 if __name__ == '__main__':
-    app.run(port=5005)
-    
+    app.debug = True
+    server = WSGIServer(("", 5000), app)
+    server.serve_forever()
