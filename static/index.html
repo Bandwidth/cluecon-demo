@@ -13,7 +13,7 @@
       var evtSrc = new EventSource("/sse_push");
 
       evtSrc.onmessage = function(e) {
-          alert(e.data);
+          gameInstance.SendMessage('Bandwidth', 'UpdateMessage', e.data);
       };
     </script>
   </head>
