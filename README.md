@@ -21,4 +21,5 @@ The following environmental variables must be set
 BANDWIDTH_USER_ID
 BANDWIDTH_API_TOKEN
 BANDWIDTH_API_SECRET 
+NGROK_URL
 ```
