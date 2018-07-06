@@ -11,9 +11,10 @@ try:
     BANDWIDTH_USER_ID = os.environ['BANDWIDTH_USER_ID']
     BANDWIDTH_API_TOKEN = os.environ['BANDWIDTH_API_TOKEN']
     BANDWIDTH_API_SECRET = os.environ['BANDWIDTH_API_SECRET']
+    NGROK_URL = os.environ['NGROK_URL']
 
 except KeyError:
-    print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, and BANDWIDTH_API_SECRET must be set")
+    print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, BANDWIDTH_API_SECRET, and NGROK_URL must be set")
     sys.exit(-1)
 
 """
@@ -30,7 +31,7 @@ Main engine that processes flow json and sends requests or performs
 specified actions defined by flow.
 """
 
-def executeFlow(flow, nodeid, trigger_id, request):
+def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
     nodes = flow['nodes']
     for i in range(int(nodeid), len(nodes)):
         node = nodes[i]
@@ -43,17 +44,30 @@ def executeFlow(flow, nodeid, trigger_id, request):
             token = BANDWIDTH_API_TOKEN
             secret = BANDWIDTH_API_SECRET
             u_auth = (token, secret)
+
+            if 'waitOnEvent' in node:
+                waitOnEventJSONString = json.dumps({
+                    'waitOnEvent': node['waitOnEvent'],
+                    'nextNode': i+1,
+                    'triggerMethod': trigger_method,
+                    'triggerId': trigger_id,
+                })
+            else:
+                waitOnEventJSONString = ''
+
             if method.lower() == 'get':
                 r = requests.get(
                     url,
-                    auth=u_auth
+                    auth=u_auth,
                 )
             elif method.lower() == 'post':
                 body = node['body']
+                body['tag'] = waitOnEventJSONString
+                body['callbackUrl'] = NGROK_URL + '/voice'
                 r = requests.post(
                     url,
                     auth=u_auth,
-                    json=body
+                    json=body,
                 )
                 if "location" in r.headers:
                    return_url = r.headers['location']
@@ -61,6 +75,10 @@ def executeFlow(flow, nodeid, trigger_id, request):
             else:
                 print("Only GET and POST http methods are supported")
                 exit(-1)
+
+            if len(waitOnEventJSONString) > 0:
+                return '', 200
+
     return '', 200 
 
 """
@@ -81,7 +99,7 @@ def post():
     flow = json.loads(request.form['flow'])
     flows[trigger] = flow
     if trigger == "Now":
-       return executeFlow(flow, 0, "", request)
+       return executeFlow(flow, 0, "", request, 'Now')
     else:
        flows[trigger] = flow
     return '', 200
@@ -93,17 +111,24 @@ Route to handle messaging callbacks and pass over to execution
 @app.route('/messages')
 def executeMessageFlow():
     message_id = request.args.get('messageId')
-    return executeFlow(flows['SMS'], 0, messageId, request) 
+    return executeFlow(flows['SMS'], 0, messageId, request, 'SMS') 
 
 """
 Route to handle voice callbacks and pass over to execution
 """
 
-@app.route('/voice')
+@app.route('/voice', methods=['POST'])
 def executeCallFlow():
-    call_id = request.args.get('callId')
-    if request.args.get('eventType') == "incomingcall":
-        return executeFlow(flows['Call'], 0, call_id, request) 
+    request_data_json = json.loads(request.data)
+    if request_data_json['eventType'] == "incomingcall":
+        call_id = request_data_json['callId']
+        return executeFlow(flows['Call'], 0, call_id, request, 'Call')
+
+    elif request_data_json['eventType'] == "answer":
+        tag = request_data_json['tag']
+        tag_json = json.loads(tag)
+        return executeFlow(flows[tag_json['triggerMethod']], int(tag_json['nextNode']), tag_json['triggerId'], request, tag_json['triggerMethod'])
+
     else:
         return '', 200
 
@@ -112,4 +137,5 @@ def custom_static(filename):
     return send_from_directory('../static/TemplateData', filename)
 
 if __name__ == '__main__':
-    app.run()
+    app.run(port=5005)
+    
