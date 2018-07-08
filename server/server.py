@@ -14,7 +14,6 @@ try:
     BANDWIDTH_USER_ID = os.environ['BANDWIDTH_USER_ID']
     BANDWIDTH_API_TOKEN = os.environ['BANDWIDTH_API_TOKEN']
     BANDWIDTH_API_SECRET = os.environ['BANDWIDTH_API_SECRET']
-    NGROK_URL = os.environ['NGROK_URL']
 
 except KeyError:
     print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, BANDWIDTH_API_SECRET, and NGROK_URL must be set")
@@ -29,6 +28,7 @@ Dictionary to hold flow json for trigger types: Call, SMS, and Now
 
 flows = {}
 subscriptions = [Queue()]
+waitingOn = ""
 
 """
 Main engine that processes flow json and sends requests or performs
@@ -41,10 +41,28 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
             sub.put(node)
 
     nodes = flow['nodes']
-    for i in range(int(nodeid), len(nodes)):
-        node = nodes[i]
-        gevent.spawn(notify(node))
-        method = node['method']
+    if nodeid != "0":
+       seeking = True
+    else:
+       seeking = False
+
+    for i, node in enumerate(nodes):
+
+        if seeking == True and node['node-id'] != nodeid:
+           continue
+        else: 
+           seeking = False
+
+        if node['node-id'] == "END":
+            return '', 200
+
+        if 'method' in node:
+            method = node['method']
+        else:
+            continue
+        
+        gevent.spawn(notify("<NODEON>:"+node['node-id']))
+
         if method.lower() == 'wait':
             time.sleep(int(node['seconds']))
         else:
@@ -55,14 +73,23 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
             u_auth = (token, secret)
 
             if 'waitOnEvent' in node:
+                global waitingOn
+                waitingOn = node['waitOnEvent']
+                if waitingOn == "gather": 
+                    nextNode = node['node-id']
+                if waitingOn == "answer" and len(nodes) >= i+1:
+                    nextNode = nodes[i+1]['node-id']
+                if waitingOn == "speak" and len(nodes) >= i+1:
+                    nextNode = nodes[i+1]['node-id']    
                 waitOnEventJSONString = json.dumps({
-                    'waitOnEvent': node['waitOnEvent'],
-                    'nextNode': i+1,
+                    'waitOnEvent': waitingOn,
+                    'nextNode': nextNode,
                     'triggerMethod': trigger_method,
                     'triggerId': trigger_id,
                 })
             else:
                 waitOnEventJSONString = ''
+                waitingOn = ""
 
             if method.lower() == 'get':
                 r = requests.get(
@@ -72,12 +99,12 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
             elif method.lower() == 'post':
                 body = node['body']
                 body['tag'] = waitOnEventJSONString
-                body['callbackUrl'] = NGROK_URL + '/voice'
                 r = requests.post(
                     url,
                     auth=u_auth,
                     json=body,
                 )
+                #gevent.spawn(notify("<RESPONSE>:"+r.content))
                 if "location" in r.headers:
                    return_url = r.headers['location']
                    trigger_id = return_url.split("/")[-1]
@@ -87,7 +114,8 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
 
             if len(waitOnEventJSONString) > 0:
                 return '', 200
-
+    i += 1
+    time.sleep(1)
     return '', 200 
 
 """
@@ -107,8 +135,9 @@ def post():
     trigger = request.form['trigger']
     flow = json.loads(request.form['flow'])
     flows[trigger] = flow
+    print(flow)
     if trigger == "Now":
-       return executeFlow(flow, 0, "", request, 'Now')
+       return executeFlow(flow, "0", "", request, 'Now')
     else:
        flows[trigger] = flow
     return '', 200
@@ -120,23 +149,38 @@ Route to handle messaging callbacks and pass over to execution
 @app.route('/messages')
 def executeMessageFlow():
     message_id = request.args.get('messageId')
-    return executeFlow(flows['SMS'], 0, messageId, request, 'SMS') 
+    return executeFlow(flows['SMS'], "0", messageId, request, 'SMS') 
 
 """
 Route to handle voice callbacks and pass over to execution
 """
 
-@app.route('/voice', methods=['POST'])
+@app.route('/voice', methods=["POST"])
 def executeCallFlow():
+    global waitingOn
     request_data_json = json.loads(request.data)
+    print(request_data_json)
     if request_data_json['eventType'] == "incomingcall":
         call_id = request_data_json['callId']
-        return executeFlow(flows['Call'], 0, call_id, request, 'Call')
+        return executeFlow(flows['Call'], "0", call_id, request, 'Call')
 
-    elif request_data_json['eventType'] == "answer":
+    elif request_data_json['eventType'] == "answer" and waitingOn == "answer":
         tag = request_data_json['tag']
         tag_json = json.loads(tag)
-        return executeFlow(flows[tag_json['triggerMethod']], int(tag_json['nextNode']), tag_json['triggerId'], request, tag_json['triggerMethod'])
+        tag_json['triggerId'] = request_data_json['callId']
+        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], tag_json['triggerId'], request, tag_json['triggerMethod'])
+
+    elif request_data_json['eventType'] == "gather" and waitingOn == "gather":
+        tag = request_data_json['tag']
+        tag_json = json.loads(tag)
+        nextNode = tag_json['nextNode'] + ":" + request_data_json['digits']
+        return executeFlow(flows[tag_json['triggerMethod']], nextNode, tag_json['triggerId'], request, tag_json['triggerMethod'])
+
+    elif request_data_json['eventType'] == "speak" and waitingOn == "speak":
+        tag = request_data_json['tag']
+        tag_json = json.loads(tag)
+        tag_json['triggerId'] = request_data_json['callId']
+        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], tag_json['triggerId'], request, tag_json['triggerMethod'])    
 
     else:
         return '', 200
