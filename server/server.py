@@ -52,10 +52,13 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
 
     for i, node in enumerate(nodes):
 
+        print("seeking:" + nodeid + " in " + node['node-id'])
+
         if seeking == True and node['node-id'] != nodeid:
            continue
         else: 
            seeking = False
+           print(node['node-id'])
 
         if node['node-id'] == "END":
             return '', 200
@@ -65,6 +68,7 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
         else:
             continue
         
+
         gevent.spawn(notify("<NODEON>:"+node['node-id']))
 
         if method.lower() == 'wait':
@@ -195,9 +199,9 @@ def executeCallFlow():
         word = transcribe_file(request_data_json['callId'])
         global waitOnEventJSONString
         tag_json = json.loads(waitOnEventJSONString)
-        nextNode = tag_json['nextNode'] + ":" + word
+        nextNode = tag_json['nextNode'] + ":" + word.strip()
         print(nextNode)
-        return executeFlow(flows['Call'], nextNode, request_data_json['callId'], request, 'Call')    
+        return executeFlow(flows[tag_json['triggerMethod']], nextNode, tag_json['triggerId'], request, tag_json['triggerMethod'])    
 
     else:
         return '', 200
