@@ -4,6 +4,7 @@ import requests
 import sys
 import json
 import gevent
+import speech_recognition as sr
 from gevent.pywsgi import WSGIServer
 from gevent.queue import Queue
 from flask import Flask, render_template, request, send_from_directory, Response
@@ -14,6 +15,7 @@ try:
     BANDWIDTH_USER_ID = os.environ['BANDWIDTH_USER_ID']
     BANDWIDTH_API_TOKEN = os.environ['BANDWIDTH_API_TOKEN']
     BANDWIDTH_API_SECRET = os.environ['BANDWIDTH_API_SECRET']
+    GOOGLE_SPEECH_AUTH_FILE = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 
 except KeyError:
     print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, BANDWIDTH_API_SECRET, and NGROK_URL must be set")
@@ -29,6 +31,8 @@ Dictionary to hold flow json for trigger types: Call, SMS, and Now
 flows = {}
 subscriptions = [Queue()]
 waitingOn = ""
+waitOnEventJSONString = ""
+recordingIndex = 0
 
 """
 Main engine that processes flow json and sends requests or performs
@@ -77,10 +81,13 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
                 waitingOn = node['waitOnEvent']
                 if waitingOn == "gather": 
                     nextNode = node['node-id']
-                if waitingOn == "answer" and len(nodes) >= i+1:
+                elif waitingOn == "answer" and len(nodes) >= i+1:
                     nextNode = nodes[i+1]['node-id']
-                if waitingOn == "speak" and len(nodes) >= i+1:
-                    nextNode = nodes[i+1]['node-id']    
+                elif waitingOn == "speak" and len(nodes) >= i+1:
+                    nextNode = nodes[i+1]['node-id']
+                elif waitingOn == "recording":
+                    nextNode = nodes[i-2]['node-id']    
+                global waitOnEventJSONString    
                 waitOnEventJSONString = json.dumps({
                     'waitOnEvent': waitingOn,
                     'nextNode': nextNode,
@@ -158,10 +165,12 @@ Route to handle voice callbacks and pass over to execution
 @app.route('/voice', methods=["POST"])
 def executeCallFlow():
     global waitingOn
+    global recordingIndex
     request_data_json = json.loads(request.data)
     print(request_data_json)
     if request_data_json['eventType'] == "incomingcall":
         call_id = request_data_json['callId']
+        recordingIndex = 0
         return executeFlow(flows['Call'], "0", call_id, request, 'Call')
 
     elif request_data_json['eventType'] == "answer" and waitingOn == "answer":
@@ -176,14 +185,63 @@ def executeCallFlow():
         nextNode = tag_json['nextNode'] + ":" + request_data_json['digits']
         return executeFlow(flows[tag_json['triggerMethod']], nextNode, tag_json['triggerId'], request, tag_json['triggerMethod'])
 
-    elif request_data_json['eventType'] == "speak" and waitingOn == "speak":
+    elif request_data_json['eventType'] == "speak" and request_data_json['state']=="PLAYBACK_STOP" and waitingOn == "speak":
         tag = request_data_json['tag']
         tag_json = json.loads(tag)
         tag_json['triggerId'] = request_data_json['callId']
-        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], tag_json['triggerId'], request, tag_json['triggerMethod'])    
+        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], tag_json['triggerId'], request, tag_json['triggerMethod'])   
+
+    elif request_data_json['eventType'] == "recording" and waitingOn == "recording":
+        word = transcribe_file(request_data_json['callId'])
+        global waitOnEventJSONString
+        tag_json = json.loads(waitOnEventJSONString)
+        nextNode = tag_json['nextNode'] + ":" + word
+        print(nextNode)
+        return executeFlow(flows['Call'], nextNode, request_data_json['callId'], request, 'Call')    
 
     else:
         return '', 200
+
+"""
+Google Speech
+"""
+def transcribe_file(callId):
+   """
+   download speech file
+   """
+   global recordingIndex
+   recordingIndex = recordingIndex + 1
+   url = "https://api.catapult.inetwork.com/v1/users/<user_id>/media/" + callId + "-" + str(recordingIndex) + ".wav";
+   url = url.replace("<user_id>", BANDWIDTH_USER_ID)
+   token = BANDWIDTH_API_TOKEN
+   secret = BANDWIDTH_API_SECRET
+   u_auth = (token, secret)
+   r = requests.get(
+       url,
+       auth=u_auth
+   )
+   audio_file = callId+"-"+str(recordingIndex) +".wav"
+   open(audio_file, 'wb').write(r.content)
+   googleAuth = open(GOOGLE_SPEECH_AUTH_FILE, 'r').read()
+
+   r = sr.Recognizer() 
+   with sr.AudioFile(audio_file) as source:
+       audio = r.record(source)
+
+   # recognize speech using Google Cloud Speech
+   try:
+    transcription = r.recognize_google_cloud(audio, googleAuth)
+    print("Google Cloud Speech thinks you said " + transcription)
+   except sr.UnknownValueError:
+    print("Google Cloud Speech could not understand audio")
+   except sr.RequestError as e:
+    print("Could not request results from Google Cloud Speech service; {0}".format(e))
+   
+   os.remove(audio_file)
+
+   return str(transcription)
+
+   
 
 @app.route('/static/TemplateData/<path:filename>')
 def custom_static(filename):
@@ -223,6 +281,7 @@ def sse_push():
             subscriptions.remove(q)
 
     return Response(gen(), mimetype="text/event-stream")
+
 
 if __name__ == '__main__':
     app.debug = True

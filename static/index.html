@@ -11,7 +11,6 @@
     <script>
       var gameInstance = UnityLoader.instantiate("gameContainer", "Build/appbuilder.json", {onProgress: UnityProgress});
       var evtSrc = new EventSource("/sse_push");
-
       evtSrc.onmessage = function(e) {
           gameInstance.SendMessage('Bandwidth', 'UpdateMessage', e.data);
       };
@@ -19,11 +18,10 @@
   </head>
   <body>
     <div class="webgl-content">
-      <div id="gameContainer" style="width: 1400px; height: 900px"></div>
+      <div id="gameContainer" style="width: 1200px; height: 800px"></div>
       <div class="footer">
-        <div class="webgl-logo"></div>
         <div class="fullscreen" onclick="gameInstance.SetFullscreen(1)"></div>
-        <div class="title">AppBuilder</div>
+        <div class="title">Bandwidth AppBuilder Demo</div>
       </div>
     </div>
   </body>
