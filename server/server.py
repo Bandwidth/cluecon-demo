@@ -27,13 +27,24 @@ Dictionary to hold flow json for trigger types: Call, SMS, and Now
     SMS = execute flow on messaging callback
     Now = execute flow immediately
 """
-
 flows = {}
+
+"""
+Subscriptions list for SSEs
+"""
 subscriptions = [Queue()]
+
+"""
+Global variables for waiting on outside events
+    Ex: A speak event needs to wait for an end event
+"""
 waitingOn = ""
 waitOnEventJSONString = ""
 recordingIndex = 0
 
+"""
+Mapping of events to relevant IDs
+"""
 event_to_last_id = {
     'incomingcall': 'callId',
     'gather': 'callId',
@@ -41,6 +52,9 @@ event_to_last_id = {
     'recording': 'callId',
 }
 
+"""
+Storage of relevant IDs
+"""
 last_ids = {
     #'default': {
     #    'id': '',
