@@ -67,13 +67,10 @@ def executeFlow(flow, nodeid, request, trigger_method):
 
     for i, node in enumerate(nodes):
 
-        print("seeking:" + nodeid + " in " + node['node-id'])
-
         if seeking == True and node['node-id'] != nodeid:
            continue
         else: 
            seeking = False
-           print(node['node-id'])
 
         if node['node-id'] == "END":
             return '', 200
@@ -88,27 +85,27 @@ def executeFlow(flow, nodeid, request, trigger_method):
         if method.lower() == 'wait':
             time.sleep(int(node['seconds']))
         else:
+            global waitOnEventJSONString    
+            global waitingOn
+            global last_ids
+            global event_to_last_id
+
             url = node['url'].replace("<user_id>", BANDWIDTH_USER_ID)
             token = BANDWIDTH_API_TOKEN
             secret = BANDWIDTH_API_SECRET
             u_auth = (token, secret)
 
-            global waitOnEventJSONString    
-            global waitingOn
             last_id = None
             if 'waitOnEvent' in node:
-                global last_ids
-                global event_to_last_id
                 event = node['waitOnEvent']
                 if event in event_to_last_id and event_to_last_id[event] in last_ids:
                     last_id = event_to_last_id[event]
                 else:
                     last_id = 'default'
-                    waitingOn = node['waitOnEvent']
 
+                waitingOn = node['waitOnEvent']
                 trigger_id = last_ids[last_id]
                 url = url.replace("<trigger_id>", trigger_id)
-                print("waiting on: " + waitingOn)
                 if waitingOn == "gather": 
                     nextNode = node['node-id']
                 elif waitingOn == "answer" and i+1 < len(nodes):
@@ -124,7 +121,6 @@ def executeFlow(flow, nodeid, request, trigger_method):
                     'nextNode': nextNode,
                     'triggerMethod': trigger_method,
                 })
-                print(waitOnEventJSONString)
             else:
                 waitOnEventJSONString = ''
                 waitingOn = ""
@@ -143,8 +139,6 @@ def executeFlow(flow, nodeid, request, trigger_method):
                     json=body,
                 )
 
-                print(url)
-                print(r)
                 if "location" in r.headers:
                    return_url = r.headers['location']
                    #trigger_id = return_url.split("/")[-1]
@@ -155,7 +149,6 @@ def executeFlow(flow, nodeid, request, trigger_method):
                 exit(-1)
 
             if len(waitOnEventJSONString) > 0:
-                print('returned')
                 return '', 200
         time.sleep(1)
     return '', 200 
@@ -175,7 +168,6 @@ Route to receive flows from UI and stuff them into the flow dictionary by trigge
 @app.route('/', methods=['POST'])
 def post():
     trigger = request.form['trigger']
-    print(request.form['flow'])
     flow = json.loads(request.form['flow'])
     flows[trigger] = flow
     print(flow)
@@ -205,8 +197,8 @@ def executeCallFlow():
     global waitOnEventJSONString
     global last_ids
     request_data_json = json.loads(request.data)
-    print(request_data_json)
 
+    print(request_data_json)
     if request_data_json['eventType'] == "incomingcall":
         id_to_set = event_to_last_id["incomingcall"]
         call_id = request_data_json[id_to_set]
