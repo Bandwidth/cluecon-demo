@@ -34,12 +34,27 @@ waitingOn = ""
 waitOnEventJSONString = ""
 recordingIndex = 0
 
+event_to_last_id = {
+    'incomingcall': 'callId',
+    'gather': 'callId',
+    'speak': 'callId',
+    'recording': 'callId',
+}
+
+last_ids = {
+    #'default': {
+    #    'id': '',
+    #    'node-id': ''
+    #}
+    'default': '',
+}
+
 """
 Main engine that processes flow json and sends requests or performs
 specified actions defined by flow.
 """
 
-def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
+def executeFlow(flow, nodeid, request, trigger_method):
     def notify(node):
         for sub in subscriptions[:]:
             sub.put(node)
@@ -52,7 +67,6 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
 
     for i, node in enumerate(nodes):
 
-        print("seeking:" + nodeid + " in " + node['node-id'])
         """
         Seek specified node logic
         """
@@ -60,7 +74,6 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
            continue
         else: 
            seeking = False
-           print(node['node-id'])
 
         if node['node-id'] == "END":
             return '', 200
@@ -69,40 +82,52 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
             method = node['method']
         else:
             continue
-        
 
         gevent.spawn(notify("<NODEON>:"+node['node-id']))
 
         if method.lower() == 'wait':
             time.sleep(int(node['seconds']))
         else:
-            url = node['url'].replace("<trigger_id>", trigger_id)
-            url = url.replace("<user_id>", BANDWIDTH_USER_ID)
+            global waitOnEventJSONString    
+            global waitingOn
+            global last_ids
+            global event_to_last_id
+
+            url = node['url'].replace("<user_id>", BANDWIDTH_USER_ID)
             token = BANDWIDTH_API_TOKEN
             secret = BANDWIDTH_API_SECRET
             u_auth = (token, secret)
 
+            last_id = None
             if 'waitOnEvent' in node:
-                global waitingOn
+                event = node['waitOnEvent']
+                if event in event_to_last_id and event_to_last_id[event] in last_ids:
+                    last_id = event_to_last_id[event]
+                else:
+                    last_id = 'default'
+
                 waitingOn = node['waitOnEvent']
+                trigger_id = last_ids[last_id]
+                url = url.replace("<trigger_id>", trigger_id)
                 if waitingOn == "gather": 
                     nextNode = node['node-id']
-                elif waitingOn == "answer" and len(nodes) >= i+1:
+                elif waitingOn == "answer" and i+1 < len(nodes):
                     nextNode = nodes[i+1]['node-id']
-                elif waitingOn == "speak" and len(nodes) >= i+1:
+                elif waitingOn == "speak" and i+1 < len(nodes):
                     nextNode = nodes[i+1]['node-id']
                 elif waitingOn == "recording":
                     nextNode = nodes[i-2]['node-id']    
-                global waitOnEventJSONString    
+                else:
+                    nextNode = None
                 waitOnEventJSONString = json.dumps({
                     'waitOnEvent': waitingOn,
                     'nextNode': nextNode,
                     'triggerMethod': trigger_method,
-                    'triggerId': trigger_id,
                 })
             else:
                 waitOnEventJSONString = ''
                 waitingOn = ""
+                url = url.replace("<trigger_id>", "")
 
             if method.lower() == 'get':
                 r = requests.get(
@@ -111,16 +136,17 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
                 )
             elif method.lower() == 'post':
                 body = node['body']
-                body['tag'] = waitOnEventJSONString
                 r = requests.post(
                     url,
                     auth=u_auth,
                     json=body,
                 )
-                #gevent.spawn(notify("<RESPONSE>:"+r.content))
+
                 if "location" in r.headers:
                    return_url = r.headers['location']
-                   trigger_id = return_url.split("/")[-1]
+                   #trigger_id = return_url.split("/")[-1]
+                   if last_id is not None and last_id != 'default':
+                       last_ids[last_id] = return_url.split("/")[-1]
             else:
                 print("Only GET and POST http methods are supported")
                 exit(-1)
@@ -149,7 +175,7 @@ def post():
     flows[trigger] = flow
     print(flow)
     if trigger == "Now":
-       return executeFlow(flow, "0", "", request, 'Now')
+       return executeFlow(flow, "0", request, 'Now')
     else:
        flows[trigger] = flow
     return '', 200
@@ -161,7 +187,7 @@ Route to handle messaging callbacks and pass over to execution
 @app.route('/messages')
 def executeMessageFlow():
     message_id = request.args.get('messageId')
-    return executeFlow(flows['SMS'], "0", messageId, request, 'SMS') 
+    return executeFlow(flows['SMS'], "0", request, 'SMS') 
 
 """
 Route to handle voice callbacks and pass over to execution
@@ -171,38 +197,53 @@ Route to handle voice callbacks and pass over to execution
 def executeCallFlow():
     global waitingOn
     global recordingIndex
+    global waitOnEventJSONString
+    global last_ids
     request_data_json = json.loads(request.data)
+
     print(request_data_json)
     if request_data_json['eventType'] == "incomingcall":
-        call_id = request_data_json['callId']
+        id_to_set = event_to_last_id["incomingcall"]
+        call_id = request_data_json[id_to_set]
+        last_ids[id_to_set] = call_id
+
         recordingIndex = 0
-        return executeFlow(flows['Call'], "0", call_id, request, 'Call')
+        return executeFlow(flows['Call'], "0", request, 'Call')
 
     elif request_data_json['eventType'] == "answer" and waitingOn == "answer":
-        tag = request_data_json['tag']
-        tag_json = json.loads(tag)
-        tag_json['triggerId'] = request_data_json['callId']
-        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], tag_json['triggerId'], request, tag_json['triggerMethod'])
+        id_to_set = event_to_last_id["answer"]
+        call_id = request_data_json[id_to_set]
+        last_ids[id_to_set] = call_id
+
+        tag_json = json.loads(waitOnEventJSONString)
+        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'])
 
     elif request_data_json['eventType'] == "gather" and waitingOn == "gather":
-        tag = request_data_json['tag']
-        tag_json = json.loads(tag)
+        id_to_set = event_to_last_id["gather"]
+        call_id = request_data_json[id_to_set]
+        last_ids[id_to_set] = call_id
+
+        tag_json = json.loads(waitOnEventJSONString)
         nextNode = tag_json['nextNode'] + ":" + request_data_json['digits']
-        return executeFlow(flows[tag_json['triggerMethod']], nextNode, tag_json['triggerId'], request, tag_json['triggerMethod'])
+        return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'])
 
     elif request_data_json['eventType'] == "speak" and request_data_json['state']=="PLAYBACK_STOP" and waitingOn == "speak":
-        tag = request_data_json['tag']
-        tag_json = json.loads(tag)
-        tag_json['triggerId'] = request_data_json['callId']
-        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], tag_json['triggerId'], request, tag_json['triggerMethod'])   
+        id_to_set = event_to_last_id["speak"]
+        call_id = request_data_json[id_to_set]
+        last_ids[id_to_set] = call_id
+
+        tag_json = json.loads(waitOnEventJSONString)
+        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'])   
 
     elif request_data_json['eventType'] == "recording" and waitingOn == "recording":
+        id_to_set = event_to_last_id["recording"]
+        call_id = request_data_json[id_to_set]
+        last_ids[id_to_set] = call_id
+
         word = transcribe_file(request_data_json['callId'])
-        global waitOnEventJSONString
         tag_json = json.loads(waitOnEventJSONString)
         nextNode = tag_json['nextNode'] + ":" + word.strip()
-        print(nextNode)
-        return executeFlow(flows[tag_json['triggerMethod']], nextNode, tag_json['triggerId'], request, tag_json['triggerMethod'])    
+        return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'])    
 
     else:
         return '', 200
