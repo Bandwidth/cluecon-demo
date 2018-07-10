@@ -53,7 +53,9 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
     for i, node in enumerate(nodes):
 
         print("seeking:" + nodeid + " in " + node['node-id'])
-
+        """
+        Seek specified node logic
+        """
         if seeking == True and node['node-id'] != nodeid:
            continue
         else: 
@@ -125,8 +127,7 @@ def executeFlow(flow, nodeid, trigger_id, request, trigger_method):
 
             if len(waitOnEventJSONString) > 0:
                 return '', 200
-    i += 1
-    time.sleep(1)
+        time.sleep(1)
     return '', 200 
 
 """
@@ -214,6 +215,7 @@ def transcribe_file(callId):
    download speech file
    """
    global recordingIndex
+   #test timeout of recordIndex
    recordingIndex = recordingIndex + 1
    url = "https://api.catapult.inetwork.com/v1/users/<user_id>/media/" + callId + "-" + str(recordingIndex) + ".wav";
    url = url.replace("<user_id>", BANDWIDTH_USER_ID)
@@ -243,7 +245,7 @@ def transcribe_file(callId):
    
    os.remove(audio_file)
 
-   return str(transcription)
+   return str(transcription).lower()
 
    
 
