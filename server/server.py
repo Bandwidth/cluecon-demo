@@ -18,7 +18,7 @@ try:
     GOOGLE_SPEECH_AUTH_FILE = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
 
 except KeyError:
-    print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, BANDWIDTH_API_SECRET, and NGROK_URL must be set")
+    print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, BANDWIDTH_API_SECRET, and GOOGLE_APPLICATION_CREDENTIALS must be set")
     sys.exit(-1)
 
 """
