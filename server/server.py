@@ -70,7 +70,7 @@ Main engine that processes flow json and sends requests or performs
 specified actions defined by flow.
 """
 
-def executeFlow(flow, nodeid, request, trigger_method):
+def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
     def notify(node):
         for sub in subscriptions[:]:
             sub.put(node)
@@ -113,7 +113,6 @@ def executeFlow(flow, nodeid, request, trigger_method):
             token = BANDWIDTH_API_TOKEN
             secret = BANDWIDTH_API_SECRET
             u_auth = (token, secret)
-
             last_id = None
             if 'waitOnEvent' in node:
                 event = node['waitOnEvent']
@@ -124,7 +123,6 @@ def executeFlow(flow, nodeid, request, trigger_method):
 
                 waitingOn = node['waitOnEvent']
                 trigger_id = last_ids[last_id]
-                url = url.replace("<trigger_id>", trigger_id)
                 if waitingOn == "gather": 
                     nextNode = node['node-id']
                 elif waitingOn == "answer" and i+1 < len(nodes):
@@ -143,7 +141,8 @@ def executeFlow(flow, nodeid, request, trigger_method):
             else:
                 waitOnEventJSONString = ''
                 waitingOn = ""
-                url = url.replace("<trigger_id>", "")
+            
+            url = url.replace("<trigger_id>", trigger_id)
 
             if method.lower() == 'get':
                 r = requests.get(
@@ -163,6 +162,7 @@ def executeFlow(flow, nodeid, request, trigger_method):
                 print(r)
                 print(url)
                 print(method)
+                print(r.text)
 
                 if "location" in r.headers:
                    return_url = r.headers['location']
@@ -239,13 +239,12 @@ def executeCallFlow():
         last_ids[id_to_set] = call_id
 
         recordingIndex = 0
-        return executeFlow(flows['Call'], "0", request, 'Call')
+        return executeFlow(flows['Call'], "0", request, 'Call', trigger_id=call_id)
 
     elif request_data_json['eventType'] == "answer" and waitingOn == "answer":
         id_to_set = event_to_last_id["answer"]
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
-
         tag_json = json.loads(waitOnEventJSONString)
         return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'])
 
@@ -264,7 +263,7 @@ def executeCallFlow():
         last_ids[id_to_set] = call_id
 
         tag_json = json.loads(waitOnEventJSONString)
-        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'])   
+        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'], trigger_id=call_id)   
 
     elif request_data_json['eventType'] == "recording" and waitingOn == "recording":
         id_to_set = event_to_last_id["recording"]
@@ -274,7 +273,7 @@ def executeCallFlow():
         word = transcribe_file(request_data_json['callId'])
         tag_json = json.loads(waitOnEventJSONString)
         nextNode = tag_json['nextNode'] + ":" + word.strip()
-        return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'])    
+        return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'], trigger_id=call_id)    
 
     else:
         return '', 200
