@@ -16,9 +16,10 @@ try:
     BANDWIDTH_API_TOKEN = os.environ['BANDWIDTH_API_TOKEN']
     BANDWIDTH_API_SECRET = os.environ['BANDWIDTH_API_SECRET']
     GOOGLE_SPEECH_AUTH_FILE = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+    URL = os.environ['URL']
 
 except KeyError:
-    print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, BANDWIDTH_API_SECRET, and GOOGLE_APPLICATION_CREDENTIALS must be set")
+    print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, BANDWIDTH_API_SECRET, GOOGLE_APPLICATION_CREDENTIALS, and URL must be set")
     sys.exit(-1)
 
 """
@@ -50,6 +51,7 @@ event_to_last_id = {
     'gather': 'callId',
     'speak': 'callId',
     'recording': 'callId',
+    'answer': 'callId',
 }
 
 """
@@ -150,11 +152,17 @@ def executeFlow(flow, nodeid, request, trigger_method):
                 )
             elif method.lower() == 'post':
                 body = node['body']
+                if url.endswith('calls'):
+                    body['callbackUrl'] = URL + "/voice"
                 r = requests.post(
                     url,
                     auth=u_auth,
                     json=body,
                 )
+
+                print(r)
+                print(url)
+                print(method)
 
                 if "location" in r.headers:
                    return_url = r.headers['location']
@@ -166,6 +174,13 @@ def executeFlow(flow, nodeid, request, trigger_method):
                 exit(-1)
 
             if len(waitOnEventJSONString) > 0:
+                print('returned')
+                print([
+                    waitOnEventJSONString,
+                    waitingOn,
+                    last_ids,
+                    event_to_last_id,
+                ])
                 return '', 200
         time.sleep(1)
     return '', 200 
@@ -215,7 +230,9 @@ def executeCallFlow():
     global last_ids
     request_data_json = json.loads(request.data)
 
+    print(waitingOn)
     print(request_data_json)
+
     if request_data_json['eventType'] == "incomingcall":
         id_to_set = event_to_last_id["incomingcall"]
         call_id = request_data_json[id_to_set]
