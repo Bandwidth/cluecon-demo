@@ -135,3 +135,11 @@ Your Google application credentials can be found here ???
 <images showing how to download the file>
 
 The url to set is your Ngrok URL shown above
+
+### Launching the application
+Once setup with Ngrok, the cluecon-demo-virtualenv virtual environment, and the environmental variables, launch the application by running
+```
+python server/server.py
+```
+
+You should be able to go to your https Ngrok url and see the home page of the application
