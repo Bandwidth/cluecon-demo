@@ -1,22 +1,22 @@
 # cluecon-demo
 
-## Installation
+## Project Setup
 
 ### User requirements
-* You must have a Bandwidth account (https://app.bandwidth.com/)
-* You must have a Google Cloud account (???)
-* You must have a Ngrok account (https://ngrok.com/)
+* You must have a Bandwidth account (https://app.bandwidth.com/).
+* You must have a Google Cloud account (???).
+* You must have a Ngrok account (https://ngrok.com/).
 
 ### System requirements
 * Python version = 3.7.0
 * Ngrok
 * git
 
-Instructions for downloading Python 3.7.0 can be found here https://www.python.org/downloads/
+Instructions for downloading Python 3.7.0 can be found here https://www.python.org/downloads/.
 
-Instructions for downloading Ngrok can be found here https://ngrok.com/download
+Instructions for downloading Ngrok can be found here https://ngrok.com/download.
 
-Git can be downloaded by running the following command
+Git can be downloaded by running the following command on your terminal:
 ```
 sudo apt-get install git
 ```
@@ -33,12 +33,13 @@ You will see a screen that looks like this:
 
 Take note of the HTTPS Forwarding url. You will need this later in setting up the demo.
 
-Leave this command running, and open a new terminal window
+Leave this command running, and open a new terminal window.
 
 ### Repo setup
 
-1. Navigate to the directory that will hold the project
-2. Run the following commands to setup the repo
+1. Open up a terminal.
+2. Navigate to the directory that will hold the project.
+3. Run the following commands to setup the repo:
 ```
 git clone git@github.com:Bandwidth/cluecon-demo.git
 cd cluecon-demo
@@ -53,7 +54,7 @@ If done properly, the beginning of your prompt should look like this:
 (cluecon-demo-virtualenv)
 ```
 
-And running the command
+Running the command
 ```
 pip freeze
 ```
@@ -118,7 +119,7 @@ Werkzeug==0.14.1
 
 ### Environmental variables
 
-The following environmental variables must be set
+The following environmental variables must be set:
 
 ```
 BANDWIDTH_USER_ID
@@ -128,19 +129,19 @@ GOOGLE_APPLICATION_CREDENTIALS
 APPLICATION_URL
 ```
 
-Your Bandwidth credentials can be found here https://app.bandwidth.com/account/profile
+Your Bandwidth credentials can be found here https://app.bandwidth.com/account/profile.
 
 ![alt text](images/bandwidth_credentials.png)
 
 Your Google application credentials can be found here ???
 <images showing how to download the file>
 
-The APPLICATION_URL is your Ngrok url shown above
+The APPLICATION_URL is your Ngrok url shown above.
 
 ### Launching the application
-Once setup with Ngrok, the cluecon-demo-virtualenv virtual environment, and the environmental variables, launch the application by running
+Once setup with Ngrok, the cluecon-demo-virtualenv virtual environment, and the environmental variables, launch the application by running the following command:
 ```
 python server/server.py
 ```
 
-You should be able to go to your https Ngrok url and see the home page of the application
+You should be able to go to your https Ngrok url and see the home page of the application.
