@@ -16,11 +16,39 @@ try:
     BANDWIDTH_API_TOKEN = os.environ['BANDWIDTH_API_TOKEN']
     BANDWIDTH_API_SECRET = os.environ['BANDWIDTH_API_SECRET']
     GOOGLE_SPEECH_AUTH_FILE = os.environ['GOOGLE_APPLICATION_CREDENTIALS']
-    URL = os.environ['URL']
+    APPLICATION_URL = os.environ['APPLICATION_URL']
 
 except KeyError:
-    print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, BANDWIDTH_API_SECRET, GOOGLE_APPLICATION_CREDENTIALS, and URL must be set")
+    print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, BANDWIDTH_API_SECRET, GOOGLE_APPLICATION_CREDENTIALS, and APPLICATION_URL must be set")
     sys.exit(-1)
+
+
+app_url = "https://api.catapult.inetwork.com/v1/users/<userId>/applications/".replace("<userId>", BANDWIDTH_USER_ID)
+token = BANDWIDTH_API_TOKEN
+secret = BANDWIDTH_API_SECRET
+u_auth = (token, secret)
+application_name = APPLICATION_URL + " Cluecon Demo"
+
+current_applications = requests.get(app_url, auth=u_auth).json()
+app_exists = False
+for application in current_applications:
+    if application['name'] == application_name:
+        app_exists = True
+        break
+
+if not app_exists:
+    body = {
+        "name": APPLICATION_URL + " Cluecon Demo",
+        "incomingCallUrl": APPLICATION_URL + "/voice",
+        "incomingMessageUrl": APPLICATION_URL + "/messages",
+        "autoAnswer": "false",
+        "callbackHttpMethod": "POST"
+    }
+    requests.post(
+        app_url,
+        auth=u_auth,
+        json=body,
+    )
 
 """
 Dictionary to hold flow json for trigger types: Call, SMS, and Now
@@ -152,17 +180,12 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
             elif method.lower() == 'post':
                 body = node['body']
                 if url.endswith('calls'):
-                    body['callbackUrl'] = URL + "/voice"
+                    body['callbackUrl'] = APPLICATION_URL + "/voice"
                 r = requests.post(
                     url,
                     auth=u_auth,
                     json=body,
                 )
-
-                print(r)
-                print(url)
-                print(method)
-                print(r.text)
 
                 if "location" in r.headers:
                    return_url = r.headers['location']
