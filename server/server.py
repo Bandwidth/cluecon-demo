@@ -212,6 +212,7 @@ Route to receive flows from UI and stuff them into the flow dictionary by trigge
 
 @app.route('/', methods=['POST'])
 def post():
+    print(request.form['flow'])
     trigger = request.form['trigger']
     flow = json.loads(request.form['flow'])
     flows[trigger] = flow
