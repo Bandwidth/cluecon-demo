@@ -145,3 +145,16 @@ python server/server.py
 ```
 
 You should be able to go to your https Ngrok url and see the home page of the application.
+
+### Purchasing a Bandwidth Phone Number
+By going to your Ngrok url, you should see the flowchart creator for the application. However, any flow you create will not run without a Bandwidth number. The steps to get a Bandwidth number are as follows:
+
+1. Go to https://app.bandwidth.com.
+2. Log in to your account.
+3. Go to the "Numbers" tab on the top right of the page.
+4. Go to the "Buy" tab on the top left of the page.
+5. Search for a number by areacode, zipcode, or city.
+6. Select your desired phone numbers (note: if you are on a trial account with Bandwidth, select only one phone number due to limited funds in the trial account).
+7. Click "Get Numbers" at the bottom of the screen.
+
+You now have Bandwidth numbers to use for your flowchart.
