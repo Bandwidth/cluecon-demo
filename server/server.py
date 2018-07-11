@@ -214,16 +214,16 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                 exit(-1)
 
             if len(waitOnEventJSONString) > 0:
-                print('returned')
-                print([
-                    waitOnEventJSONString,
-                    waitingOn,
-                    last_ids,
-                    event_to_last_id,
-                ])
                 return '', 200
         time.sleep(1)
     return '', 200 
+
+"""
+Default function to play when user input during a gather or record is not understood
+"""
+
+def execute_input_not_understood():
+    print("Command not found. Please retry")
 
 """
 Route to serve up UI
@@ -239,7 +239,6 @@ Route to receive flows from UI and stuff them into the flow dictionary by trigge
 
 @app.route('/', methods=['POST'])
 def post():
-    print(request.form['flow'])
     trigger = request.form['trigger']
     flow = json.loads(request.form['flow'])
     flows[trigger] = flow
@@ -260,8 +259,6 @@ def executeMessageFlow():
     global toNumber
     global message
     request_data_json = json.loads(request.data)
-    print(waitingOn)
-    print(request_data_json)
     message = request_data_json['text']
     fromNumber = request_data_json['from']
     toNumber = request_data_json['to']
@@ -278,9 +275,6 @@ def executeCallFlow():
     global waitOnEventJSONString
     global last_ids
     request_data_json = json.loads(request.data)
-
-    print(waitingOn)
-    print(request_data_json)
 
     if request_data_json['eventType'] == "incomingcall":
         id_to_set = event_to_last_id["incomingcall"]
@@ -301,7 +295,20 @@ def executeCallFlow():
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
         tag_json = json.loads(waitOnEventJSONString)
+        #seek for node id...if we don't find node id:
+        # post a speak prompt
+        # reexecute listen node
         nextNode = tag_json['nextNode'] + ":" + request_data_json['digits']
+        found = False
+        for node in flows[tag_json['triggerMethod']]['nodes']:
+            if node['node-id'] == nextNode:
+               found = True
+               break
+
+        if not found:
+            execute_input_not_understood()
+            nextNode = tag_json['nextNode']
+
         return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'])
 
     elif request_data_json['eventType'] == "speak" and request_data_json['state']=="PLAYBACK_STOP" and waitingOn == "speak":
@@ -324,10 +331,20 @@ def executeCallFlow():
         last_ids[id_to_set] = call_id
         word = transcribe_file(request_data_json['callId'])
         tag_json = json.loads(waitOnEventJSONString)
-        nextNode = tag_json['nextNode'] + ":" + word.strip()
         #seek for node id...if we don't find node id:
         # post a speak prompt
         # reexecute listen node
+        nextNode = tag_json['nextNode'] + ":" + request_data_json['digits']
+        found = False
+        for node in flows[tag_json['triggerMethod']]['nodes']:
+            if node['node-id'] == nextNode:
+               found = True
+               break
+
+        if not found:
+            execute_input_not_understood()
+            nextNode = tag_json['nextNode']
+
         return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'], trigger_id=call_id)    
 
     else:
