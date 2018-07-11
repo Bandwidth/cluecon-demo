@@ -109,9 +109,10 @@ ngrok http 5000
 ```
 
 You will see a screen that looks like this:
-<image with circled https url>
 
-Take note of the circled URL. You will need this later in setting up the demo.
+![alt text](google.com)
+
+Take note of the HTTPS Forwarding URL. You will need this later in setting up the demo.
 
 ### Environmental variables
 
