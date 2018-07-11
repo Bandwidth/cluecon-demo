@@ -21,6 +21,20 @@ Git can be downloaded by running the following command
 sudo apt-get install git
 ```
 
+### Launching Ngrok
+After installing Ngrok, it can be launched by running the following command:
+```
+ngrok http 5000
+```
+
+You will see a screen that looks like this:
+
+![alt text](images/ngrok_url_example.jpg)
+
+Take note of the HTTPS Forwarding URL. You will need this later in setting up the demo.
+
+Leave this command running, and open a new terminal window
+
 ### Repo setup
 
 1. Navigate to the directory that will hold the project
@@ -101,18 +115,6 @@ uritemplate==3.0.0
 urllib3==1.23
 Werkzeug==0.14.1
 ```
-
-### Launching Ngrok
-After installing Ngrok, it can be launched by running the following command:
-```
-ngrok http 5000
-```
-
-You will see a screen that looks like this:
-
-![alt text](images/ngrok_url_example.jpg)
-
-Take note of the HTTPS Forwarding URL. You will need this later in setting up the demo.
 
 ### Environmental variables
 
