@@ -4,7 +4,7 @@
 
 ### User requirements
 * You must have a Bandwidth account (https://app.bandwidth.com/).
-* You must have a Google Cloud account (???).
+* You must have a Google Cloud account (https://cloud.google.com/speech-to-text/).
 * You must have a Ngrok account (https://ngrok.com/).
 
 ### System requirements
@@ -133,8 +133,17 @@ Your Bandwidth credentials can be found here https://app.bandwidth.com/account/p
 
 ![alt text](images/bandwidth_credentials.png)
 
-Your Google application credentials can be found here ???
-<images showing how to download the file>
+Your Google application credentials file can be found here https://console.cloud.google.com/projectselector/home/
+1. Click "APIs & Services" on the left menu.
+2. Click "Credentials" on the displayed menu.
+3. Click "Create credentials" in the middle of the screen.
+4. Select "Service account key".
+5. Create a service account.
+6. Select your role ("owner" should suffice for this demo)
+7. Select "JSON" for key type.
+
+After a few seconds, your file should download. Move this file to a place easily accessible by the demo code, and set GOOGLE_APPLICATION_CREDENTIALS to this file.
+
 
 The APPLICATION_URL is your Ngrok url shown above.
 
