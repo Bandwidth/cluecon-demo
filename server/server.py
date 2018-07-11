@@ -224,6 +224,28 @@ Default function to play when user input during a gather or record is not unders
 
 def execute_input_not_understood():
     print("Command not found. Please retry")
+    global last_ids
+    token = BANDWIDTH_API_TOKEN
+    secret = BANDWIDTH_API_SECRET
+    u_auth = (token, secret)
+
+    url = 'https://api.catapult.inetwork.com/v1/users/<user_id>/calls/<trigger_id>/audio'
+    url = url.replace("<user_id>", BANDWIDTH_USER_ID)
+    url = url.replace("<trigger_id>", last_ids['callId'])
+    body = {
+        'gender': 'female', 
+        'locale': 'en_US', 
+        'sentence': 'Your response was not understood. Please retry', 
+        'voice': 'susan'
+    }
+
+    r = requests.post(
+        url,
+        auth=u_auth,
+        json=body
+    )
+
+    print(r)
 
 """
 Route to serve up UI
@@ -298,12 +320,15 @@ def executeCallFlow():
         #seek for node id...if we don't find node id:
         # post a speak prompt
         # reexecute listen node
-        nextNode = tag_json['nextNode'] + ":" + request_data_json['digits']
         found = False
-        for node in flows[tag_json['triggerMethod']]['nodes']:
-            if node['node-id'] == nextNode:
-               found = True
-               break
+        nextNode = ""
+        if 'digits' in request_data_json:
+            for node in flows[tag_json['triggerMethod']]['nodes']:
+                nextNode = tag_json['nextNode'] + ":" + request_data_json['digits']
+                for node in flows[tag_json['triggerMethod']]['nodes']:
+                    if node['node-id'] == nextNode:
+                       found = True
+                       break
 
         if not found:
             execute_input_not_understood()
@@ -334,7 +359,7 @@ def executeCallFlow():
         #seek for node id...if we don't find node id:
         # post a speak prompt
         # reexecute listen node
-        nextNode = tag_json['nextNode'] + ":" + request_data_json['digits']
+        nextNode = tag_json['nextNode'] + ":" + word.strip()
         found = False
         for node in flows[tag_json['triggerMethod']]['nodes']:
             if node['node-id'] == nextNode:
