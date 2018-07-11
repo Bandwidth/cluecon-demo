@@ -27,18 +27,28 @@ app_url = "https://api.catapult.inetwork.com/v1/users/<userId>/applications/".re
 token = BANDWIDTH_API_TOKEN
 secret = BANDWIDTH_API_SECRET
 u_auth = (token, secret)
-body = {
-    "name": APPLICATION_URL + " Cluecon Demo",
-    "incomingCallUrl": APPLICATION_URL + "/voice",
-    "incomingMessageUrl": APPLICATION_URL + "/messages",
-    "autoAnswer": "false",
-    "callbackHttpMethod": "POST"
-}
-requests.post(
-    app_url,
-    auth=u_auth,
-    json=body,
-)
+application_name = APPLICATION_URL + " Cluecon Demo"
+
+current_applications = requests.get(app_url, auth=u_auth).json()
+app_exists = False
+for application in current_applications:
+    if application['name'] == application_name:
+        app_exists = True
+        break
+
+if not app_exists:
+    body = {
+        "name": APPLICATION_URL + " Cluecon Demo",
+        "incomingCallUrl": APPLICATION_URL + "/voice",
+        "incomingMessageUrl": APPLICATION_URL + "/messages",
+        "autoAnswer": "false",
+        "callbackHttpMethod": "POST"
+    }
+    requests.post(
+        app_url,
+        auth=u_auth,
+        json=body,
+    )
 
 """
 Dictionary to hold flow json for trigger types: Call, SMS, and Now
