@@ -31,7 +31,7 @@ You will see a screen that looks like this:
 
 ![alt text](images/ngrok_url_example.png)
 
-Take note of the HTTPS Forwarding URL. You will need this later in setting up the demo.
+Take note of the HTTPS Forwarding url. You will need this later in setting up the demo.
 
 Leave this command running, and open a new terminal window
 
@@ -125,7 +125,7 @@ BANDWIDTH_USER_ID
 BANDWIDTH_API_TOKEN
 BANDWIDTH_API_SECRET 
 GOOGLE_APPLICATION_CREDENTIALS
-URL
+APPLICATION_URL
 ```
 
 Your Bandwidth credentials can be found here https://app.bandwidth.com/account/profile
@@ -135,7 +135,7 @@ Your Bandwidth credentials can be found here https://app.bandwidth.com/account/p
 Your Google application credentials can be found here ???
 <images showing how to download the file>
 
-The url to set is your Ngrok URL shown above
+The APPLICATION_URL is your Ngrok url shown above
 
 ### Launching the application
 Once setup with Ngrok, the cluecon-demo-virtualenv virtual environment, and the environmental variables, launch the application by running
