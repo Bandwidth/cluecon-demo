@@ -42,6 +42,9 @@ Global variables for waiting on outside events
 waitingOn = ""
 waitOnEventJSONString = ""
 recordingIndex = 0
+toNumber = ""
+fromNumber = ""
+message = ""
 
 """
 Mapping of events to relevant IDs
@@ -108,12 +111,24 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
             global waitingOn
             global last_ids
             global event_to_last_id
+            global fromNumber
+            global toNumber
+            global message
 
             url = node['url'].replace("<user_id>", BANDWIDTH_USER_ID)
             token = BANDWIDTH_API_TOKEN
             secret = BANDWIDTH_API_SECRET
             u_auth = (token, secret)
             last_id = None
+            
+
+            if 'text' in node['body']:
+                if node['body']['from'] == "":
+                    node['body']['from'] = toNumber
+                if node['body']['to'] == "":
+                    node['body']['to'] = fromNumber   
+                if node['body']['text'] == "":
+                    node['body']['text'] = message      
             if 'waitOnEvent' in node:
                 event = node['waitOnEvent']
                 if event in event_to_last_id and event_to_last_id[event] in last_ids:
@@ -129,6 +144,8 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                     nextNode = nodes[i+1]['node-id']
                 elif waitingOn == "speak" and i+1 < len(nodes):
                     nextNode = nodes[i+1]['node-id']
+                elif waitingOn == "playback" and i+1 < len(nodes):
+                    nextNode = nodes[i+1]['node-id']                    
                 elif waitingOn == "recording":
                     nextNode = nodes[i-2]['node-id']    
                 else:
@@ -158,7 +175,7 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                     auth=u_auth,
                     json=body,
                 )
-
+                
                 print(r)
                 print(url)
                 print(method)
@@ -214,9 +231,17 @@ def post():
 Route to handle messaging callbacks and pass over to execution
 """
 
-@app.route('/messages')
+@app.route('/messages', methods=['POST'])
 def executeMessageFlow():
-    message_id = request.args.get('messageId')
+    global fromNumber
+    global toNumber
+    global message
+    request_data_json = json.loads(request.data)
+    print(waitingOn)
+    print(request_data_json)
+    message = request_data_json['text']
+    fromNumber = request_data_json['from']
+    toNumber = request_data_json['to']
     return executeFlow(flows['SMS'], "0", request, 'SMS') 
 
 """
@@ -238,7 +263,6 @@ def executeCallFlow():
         id_to_set = event_to_last_id["incomingcall"]
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
-
         recordingIndex = 0
         return executeFlow(flows['Call'], "0", request, 'Call', trigger_id=call_id)
 
@@ -253,7 +277,6 @@ def executeCallFlow():
         id_to_set = event_to_last_id["gather"]
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
-
         tag_json = json.loads(waitOnEventJSONString)
         nextNode = tag_json['nextNode'] + ":" + request_data_json['digits']
         return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'])
@@ -262,18 +285,26 @@ def executeCallFlow():
         id_to_set = event_to_last_id["speak"]
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
-
         tag_json = json.loads(waitOnEventJSONString)
         return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'], trigger_id=call_id)   
+
+    elif request_data_json['eventType'] == "playback" and request_data_json['status']=="done" and waitingOn == "playback":
+        id_to_set = event_to_last_id["playback"]
+        call_id = request_data_json[id_to_set]
+        last_ids[id_to_set] = call_id
+        tag_json = json.loads(waitOnEventJSONString)
+        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'], trigger_id=call_id) 
 
     elif request_data_json['eventType'] == "recording" and waitingOn == "recording":
         id_to_set = event_to_last_id["recording"]
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
-
         word = transcribe_file(request_data_json['callId'])
         tag_json = json.loads(waitOnEventJSONString)
         nextNode = tag_json['nextNode'] + ":" + word.strip()
+        #seek for node id...if we don't find node id:
+        # post a speak prompt
+        # reexecute listen node
         return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'], trigger_id=call_id)    
 
     else:
