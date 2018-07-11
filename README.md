@@ -29,7 +29,7 @@ ngrok http 5000
 
 You will see a screen that looks like this:
 
-![alt text](images/ngrok_url_example.jpg)
+![alt text](images/ngrok_url_example.png)
 
 Take note of the HTTPS Forwarding URL. You will need this later in setting up the demo.
 
