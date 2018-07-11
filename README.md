@@ -142,7 +142,7 @@ Your Google application credentials file can be found here https://console.cloud
 6. Select your role ("owner" should suffice for this demo)
 7. Select "JSON" for key type.
 
-After a few seconds, your file should download. Move this file to a place easily accessible by the demo code, and set GOOGLE_APPLICATION_CREDENTIALS to this file.
+After a few seconds, your file should download. Move this file to a place easily accessible by the demo code, and set GOOGLE_APPLICATION_CREDENTIALS to this file (NOTE: you may need to surround the filename in quotes).
 
 
 The APPLICATION_URL is your Ngrok url shown above.
