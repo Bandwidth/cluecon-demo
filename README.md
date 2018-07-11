@@ -5,6 +5,7 @@
 ### User requirements
 * You must have a Bandwidth account (https://app.bandwidth.com/)
 * You must have a Google Cloud account (???)
+* You must have a Ngrok account (https://ngrok.com/)
 
 ### System requirements
 * Python version = 3.7.0
@@ -12,7 +13,9 @@
 * git
 
 Instructions for downloading Python 3.7.0 can be found here https://www.python.org/downloads/
+
 Instructions for downloading Ngrok can be found here https://ngrok.com/download
+
 Git can be downloaded by running the following command
 ```
 sudo apt-get install git
@@ -100,6 +103,17 @@ urllib3==1.23
 Werkzeug==0.14.1
 ```
 
+### Launching Ngrok
+After installing Ngrok, it can be launched by running the following command:
+```
+ngrok http 5000
+```
+
+You will see a screen that looks like this:
+<image with circled https url>
+
+Take note of the circled URL. You will need this later in setting up the demo.
+
 ### Environmental variables
 
 The following environmental variables must be set
@@ -111,3 +125,11 @@ BANDWIDTH_API_SECRET
 GOOGLE_APPLICATION_CREDENTIALS
 URL
 ```
+
+Your Bandwidth credentials can be found here https://app.bandwidth.com/account/profile
+<images showing the 3 credentials>
+
+Your Google application credentials can be found here ???
+<images showing how to download the file>
+
+The url to set is your Ngrok URL shown above
