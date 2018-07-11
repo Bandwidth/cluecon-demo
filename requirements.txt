@@ -48,6 +48,8 @@ snowballstemmer==1.2.1
 SpeechRecognition==3.8.1
 Sphinx==1.7.5
 sphinxcontrib-websupport==1.1.0
+style==1.1.0
+update==0.0.1
 uritemplate==3.0.0
 urllib3==1.23
 Werkzeug==0.14.1
