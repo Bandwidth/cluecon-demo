@@ -32,7 +32,6 @@ pip install virtualenv
 virtualenv -p python3 cluecon-demo-virtualenv
 source cluecon-demo-virtualenv/bin/activate
 pip install -r requirements.txt
-
 ```
 
 If done properly, the beginning of your prompt should look like this:

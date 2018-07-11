@@ -22,6 +22,24 @@ except KeyError:
     print("Environmental variables BANDWIDTH_USER_ID, BANDWIDTH_API_TOKEN, BANDWIDTH_API_SECRET, GOOGLE_APPLICATION_CREDENTIALS, and URL must be set")
     sys.exit(-1)
 
+
+app_url = "https://api.catapult.inetwork.com/v1/users/<userId>/applications/".replace("<userId>", BANDWIDTH_USER_ID)
+token = BANDWIDTH_API_TOKEN
+secret = BANDWIDTH_API_SECRET
+u_auth = (token, secret)
+body = {
+    "name": URL + " Cluecon Demo",
+    "incomingCallUrl": URL + "/voice",
+    "incomingMessageUrl": URL + "/messages",
+    "autoAnswer": "false",
+    "callbackHttpMethod": "POST"
+}
+requests.post(
+    app_url,
+    auth=u_auth,
+    json=body,
+)
+
 """
 Dictionary to hold flow json for trigger types: Call, SMS, and Now
     Call = execute flow on voice callback
@@ -158,11 +176,6 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                     auth=u_auth,
                     json=body,
                 )
-
-                print(r)
-                print(url)
-                print(method)
-                print(r.text)
 
                 if "location" in r.headers:
                    return_url = r.headers['location']
