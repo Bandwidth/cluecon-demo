@@ -129,7 +129,8 @@ URL
 ```
 
 Your Bandwidth credentials can be found here https://app.bandwidth.com/account/profile
-<images showing the 3 credentials>
+
+![alt text](images/bandwidth_credentials.png)
 
 Your Google application credentials can be found here ???
 <images showing how to download the file>
