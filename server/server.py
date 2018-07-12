@@ -89,10 +89,6 @@ event_to_last_id = {
 Storage of relevant IDs
 """
 last_ids = {
-    #'default': {
-    #    'id': '',
-    #    'node-id': ''
-    #}
     'default': '',
 }
 
@@ -132,8 +128,6 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
         if method.lower() == 'wait':
             time.sleep(int(node['seconds']))
         else:
-            print("Executing node: ")
-            print(node)
             global waitOnEventJSONString    
             global waitingOn
             global last_ids
@@ -195,7 +189,7 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                 )
             elif method.lower() == 'post':
                 body = node['body']
-                if url.endswith('calls'):
+                if 'calls' in url:
                     body['callbackUrl'] = APPLICATION_URL + "/voice"
                 r = requests.post(
                     url,
@@ -203,9 +197,8 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                     json=body,
                 )
 
-                if "location" in r.headers:
-                   return_url = r.headers['location']
-                   #trigger_id = return_url.split("/")[-1]
+                if "Location" in r.headers:
+                   return_url = r.headers['Location']
                    if last_id is not None and last_id != 'default':
                        last_ids[last_id] = return_url.split("/")[-1]
             else:
@@ -222,7 +215,6 @@ Default function to play when user input during a gather or record is not unders
 """
 
 def execute_input_not_understood():
-    print("Command not found. Please retry")
     global last_ids
     token = BANDWIDTH_API_TOKEN
     secret = BANDWIDTH_API_SECRET
@@ -307,15 +299,13 @@ def executeCallFlow():
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
         tag_json = json.loads(waitOnEventJSONString)
-        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'])
+        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'], trigger_id=call_id)
 
     elif request_data_json['eventType'] == "gather" and waitingOn == "gather":
-        print("gather")
         id_to_set = event_to_last_id["gather"]
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
         tag_json = json.loads(waitOnEventJSONString)
-        print(tag_json)
         #seek for node id...if we don't find node id:
         # post a speak prompt
         # reexecute listen node
@@ -332,9 +322,8 @@ def executeCallFlow():
         if not found:
             execute_input_not_understood()
             nextNode = tag_json['nextNode']
-            print(nextNode)
 
-        return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'])
+        return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'], trigger_id=call_id)
 
     elif request_data_json['eventType'] == "speak" and request_data_json['state']=="PLAYBACK_STOP" and waitingOn == "speak":
         id_to_set = event_to_last_id["speak"]
@@ -374,7 +363,6 @@ def executeCallFlow():
         return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'], trigger_id=call_id)    
 
     else:
-        print("nothing")
         return '', 200
 
 """
