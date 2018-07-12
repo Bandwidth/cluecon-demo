@@ -124,6 +124,8 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
             continue
 
         gevent.spawn(notify("<NODEON>:"+node['node-id']))
+        print("Currently executing node: ")
+        print(node)
 
         if method.lower() == 'wait':
             time.sleep(int(node['seconds']))
@@ -189,7 +191,7 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                 )
             elif method.lower() == 'post':
                 body = node['body']
-                if 'calls' in url:
+                if 'calls' in url and ('gather' not in url and 'audio' not in url):
                     body['callbackUrl'] = APPLICATION_URL + "/voice"
                 r = requests.post(
                     url,
@@ -197,6 +199,11 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                     json=body,
                 )
 
+                print(url)
+                print(body)
+                print(r)
+                print(r.text)
+                print(r.headers)
                 if "Location" in r.headers:
                    return_url = r.headers['Location']
                    if last_id is not None and last_id != 'default':
@@ -288,6 +295,7 @@ def executeCallFlow():
     global waitOnEventJSONString
     global last_ids
     request_data_json = json.loads(request.data)
+    print(request_data_json)
 
     if request_data_json['eventType'] == "incomingcall":
         id_to_set = event_to_last_id["incomingcall"]
