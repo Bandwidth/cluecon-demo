@@ -236,6 +236,8 @@ def execute_input_not_understood():
         json=body
     )
 
+    time.sleep(3)
+
 """
 Route to serve up UI
 """
