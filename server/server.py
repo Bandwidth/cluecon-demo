@@ -400,8 +400,10 @@ def transcribe_file(callId):
     print("Google Cloud Speech thinks you said " + transcription)
    except sr.UnknownValueError:
     print("Google Cloud Speech could not understand audio")
+    transcription = ''
    except sr.RequestError as e:
     print("Could not request results from Google Cloud Speech service; {0}".format(e))
+    transcription = ''
    
    os.remove(audio_file)
 
