@@ -373,11 +373,32 @@ def transcribe_file(callId):
 
    return str(transcription).lower()
 
-   
+@app.route('/save', methods=['POST'])
+def save_flow():
+    print(request.form['flow_name'])
+    if not os.path.exists("../data"):
+        os.makedirs("../data")
+    myfile = open(r"../data/" + request.form['flow_name'] + ".bwf", "w")
+    myfile.write(request.form['flow_serialized'])
+    myfile.close()
+    return '', 200   
+
+@app.route('/list', methods=['GET'])
+def list_flows():
+    print(os.listdir("../data"))
+    files = os.listdir("../data")
+    return str(files)
+
+@app.route('/load/<flow_name>', methods=['GET'])
+def load_flow(flow_name):
+    myfile = open(r"../data/" + flow_name + ".bwf", "r")
+    flow = myfile.read()
+    myfile.close()
+    return str(flow)       
 
 @app.route('/static/TemplateData/<path:filename>')
 def custom_static(filename):
-   return send_from_directory('../static/TemplateData', filename)
+    return send_from_directory('../static/TemplateData', filename)
 
 class ServerSentEvent(object):
 
@@ -419,3 +440,4 @@ if __name__ == '__main__':
     app.debug = True
     server = WSGIServer(("", 5000), app)
     server.serve_forever()
+
