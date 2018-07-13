@@ -89,10 +89,6 @@ event_to_last_id = {
 Storage of relevant IDs
 """
 last_ids = {
-    #'default': {
-    #    'id': '',
-    #    'node-id': ''
-    #}
     'default': '',
 }
 
@@ -107,10 +103,7 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
             sub.put(node)
 
     nodes = flow['nodes']
-    if nodeid != "0":
-       seeking = True
-    else:
-       seeking = False
+    seeking = True
 
     for i, node in enumerate(nodes):
 
@@ -131,6 +124,8 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
             continue
 
         gevent.spawn(notify("<NODEON>:"+node['node-id']))
+        print("Currently executing node: ")
+        print(node)
 
         if method.lower() == 'wait':
             time.sleep(int(node['seconds']))
@@ -196,7 +191,7 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                 )
             elif method.lower() == 'post':
                 body = node['body']
-                if url.endswith('calls'):
+                if 'calls' in url and ('gather' not in url and 'audio' not in url):
                     body['callbackUrl'] = APPLICATION_URL + "/voice"
                 r = requests.post(
                     url,
@@ -204,9 +199,13 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                     json=body,
                 )
 
-                if "location" in r.headers:
-                   return_url = r.headers['location']
-                   #trigger_id = return_url.split("/")[-1]
+                print(url)
+                print(body)
+                print(r)
+                print(r.text)
+                print(r.headers)
+                if "Location" in r.headers:
+                   return_url = r.headers['Location']
                    if last_id is not None and last_id != 'default':
                        last_ids[last_id] = return_url.split("/")[-1]
             else:
@@ -214,16 +213,37 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                 exit(-1)
 
             if len(waitOnEventJSONString) > 0:
-                print('returned')
-                print([
-                    waitOnEventJSONString,
-                    waitingOn,
-                    last_ids,
-                    event_to_last_id,
-                ])
                 return '', 200
         time.sleep(1)
     return '', 200 
+
+"""
+Default function to play when user input during a gather or record is not understood
+"""
+
+def execute_input_not_understood():
+    global last_ids
+    token = BANDWIDTH_API_TOKEN
+    secret = BANDWIDTH_API_SECRET
+    u_auth = (token, secret)
+
+    url = 'https://api.catapult.inetwork.com/v1/users/<user_id>/calls/<trigger_id>/audio'
+    url = url.replace("<user_id>", BANDWIDTH_USER_ID)
+    url = url.replace("<trigger_id>", last_ids['callId'])
+    body = {
+        'gender': 'female', 
+        'locale': 'en_US', 
+        'sentence': 'Your response was not understood. Please retry', 
+        'voice': 'susan'
+    }
+
+    r = requests.post(
+        url,
+        auth=u_auth,
+        json=body
+    )
+
+    time.sleep(3)
 
 """
 Route to serve up UI
@@ -239,13 +259,12 @@ Route to receive flows from UI and stuff them into the flow dictionary by trigge
 
 @app.route('/', methods=['POST'])
 def post():
-    print(request.form['flow'])
     trigger = request.form['trigger']
     flow = json.loads(request.form['flow'])
     flows[trigger] = flow
     print(flow)
     if trigger == "Now":
-       return executeFlow(flow, "0", request, 'Now')
+       return executeFlow(flow, flow['nodes'][0]['node-id'], request, 'Now')
     else:
        flows[trigger] = flow
     return '', 200
@@ -260,12 +279,10 @@ def executeMessageFlow():
     global toNumber
     global message
     request_data_json = json.loads(request.data)
-    print(waitingOn)
-    print(request_data_json)
     message = request_data_json['text']
     fromNumber = request_data_json['from']
     toNumber = request_data_json['to']
-    return executeFlow(flows['SMS'], "0", request, 'SMS') 
+    return executeFlow(flows['SMS'], flows['SMS']['nodes'][0]['node-id'], request, 'SMS') 
 
 """
 Route to handle voice callbacks and pass over to execution
@@ -278,8 +295,6 @@ def executeCallFlow():
     global waitOnEventJSONString
     global last_ids
     request_data_json = json.loads(request.data)
-
-    print(waitingOn)
     print(request_data_json)
 
     if request_data_json['eventType'] == "incomingcall":
@@ -287,22 +302,38 @@ def executeCallFlow():
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
         recordingIndex = 0
-        return executeFlow(flows['Call'], "0", request, 'Call', trigger_id=call_id)
+        return executeFlow(flows['Call'], flows['Call']['nodes'][0]['node-id'], request, 'Call', trigger_id=call_id)
 
     elif request_data_json['eventType'] == "answer" and waitingOn == "answer":
         id_to_set = event_to_last_id["answer"]
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
         tag_json = json.loads(waitOnEventJSONString)
-        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'])
+        return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'], trigger_id=call_id)
 
     elif request_data_json['eventType'] == "gather" and waitingOn == "gather":
         id_to_set = event_to_last_id["gather"]
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
         tag_json = json.loads(waitOnEventJSONString)
-        nextNode = tag_json['nextNode'] + ":" + request_data_json['digits']
-        return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'])
+        #seek for node id...if we don't find node id:
+        # post a speak prompt
+        # reexecute listen node
+        found = False
+        nextNode = ""
+        if 'digits' in request_data_json:
+            for node in flows[tag_json['triggerMethod']]['nodes']:
+                nextNode = tag_json['nextNode'] + ":" + request_data_json['digits']
+                for node in flows[tag_json['triggerMethod']]['nodes']:
+                    if node['node-id'] == nextNode:
+                       found = True
+                       break
+
+        if not found:
+            execute_input_not_understood()
+            nextNode = tag_json['nextNode']
+
+        return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'], trigger_id=call_id)
 
     elif request_data_json['eventType'] == "speak" and request_data_json['state']=="PLAYBACK_STOP" and waitingOn == "speak":
         id_to_set = event_to_last_id["speak"]
@@ -319,15 +350,26 @@ def executeCallFlow():
         return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'], trigger_id=call_id) 
 
     elif request_data_json['eventType'] == "recording" and waitingOn == "recording":
+        print("recording")
         id_to_set = event_to_last_id["recording"]
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
         word = transcribe_file(request_data_json['callId'])
         tag_json = json.loads(waitOnEventJSONString)
-        nextNode = tag_json['nextNode'] + ":" + word.strip()
         #seek for node id...if we don't find node id:
         # post a speak prompt
         # reexecute listen node
+        nextNode = tag_json['nextNode'] + ":" + word.strip()
+        found = False
+        for node in flows[tag_json['triggerMethod']]['nodes']:
+            if node['node-id'] == nextNode:
+               found = True
+               break
+
+        if not found:
+            execute_input_not_understood()
+            nextNode = tag_json['nextNode']
+
         return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'], trigger_id=call_id)    
 
     else:
@@ -366,8 +408,10 @@ def transcribe_file(callId):
     print("Google Cloud Speech thinks you said " + transcription)
    except sr.UnknownValueError:
     print("Google Cloud Speech could not understand audio")
+    transcription = ''
    except sr.RequestError as e:
     print("Could not request results from Google Cloud Speech service; {0}".format(e))
+    transcription = ''
    
    os.remove(audio_file)
 
