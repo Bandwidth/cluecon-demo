@@ -83,6 +83,7 @@ event_to_last_id = {
     'speak': 'callId',
     'recording': 'callId',
     'answer': 'callId',
+    'sms': 'callId',
 }
 
 """
@@ -169,7 +170,7 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                     nextNode = nodes[i+1]['node-id']
                 elif waitingOn == "playback" and i+1 < len(nodes):
                     nextNode = nodes[i+1]['node-id']                    
-                elif waitingOn == "recording":
+                elif waitingOn == "recording" or waitingOn == "sms": ###
                     nextNode = nodes[i-2]['node-id']    
                 else:
                     nextNode = None
@@ -199,11 +200,6 @@ def executeFlow(flow, nodeid, request, trigger_method, trigger_id=""):
                     json=body,
                 )
 
-                print(url)
-                print(body)
-                print(r)
-                print(r.text)
-                print(r.headers)
                 if "Location" in r.headers:
                    return_url = r.headers['Location']
                    if last_id is not None and last_id != 'default':
@@ -245,6 +241,26 @@ def execute_input_not_understood():
 
     time.sleep(3)
 
+def execute_input_not_understood_text(_from, to):
+    token = BANDWIDTH_API_TOKEN
+    secret = BANDWIDTH_API_SECRET
+    u_auth = (token, secret)
+
+    url = 'https://api.catapult.inetwork.com/v1/users/<user_id>/messages'
+    url = url.replace("<user_id>", BANDWIDTH_USER_ID)
+    body = {
+        'from': _from, 
+        'to': to, 
+        'text': 'Your response was not understood. Please retry'
+    }
+
+    r = requests.post(
+        url,
+        auth=u_auth,
+        json=body
+    )
+
+    time.sleep(3)
 """
 Route to serve up UI
 """
@@ -282,6 +298,36 @@ def executeMessageFlow():
     message = request_data_json['text']
     fromNumber = request_data_json['from']
     toNumber = request_data_json['to']
+
+    if waitingOn == "sms":
+        id_to_get = event_to_last_id["sms"]
+        if id_to_get in last_ids:
+            call_id = last_ids[id_to_get]
+        else:
+            call_id = last_ids['default']
+        tag_json = json.loads(waitOnEventJSONString)
+        #seek for node id...if we don't find node id:
+        # post a speak prompt
+        # reexecute listen node
+        found = False
+        nextNode = ""
+        if "text" in request_data_json:
+            for node in flows[tag_json['triggerMethod']]['nodes']:
+                for node in flows[tag_json['triggerMethod']]['nodes']:
+                    node_id_split = node['node-id'].split(":")
+                    keyword = node_id_split[-1]
+                    # len(node_id_spllit) > 1 is a check to see if there is an
+                    # actual keyword to split on
+                    if len(node_id_split) > 1 and keyword.lower() in request_data_json["text"].lower():
+                        nextNode = tag_json['nextNode'] + ":" + keyword
+                        found = True
+                        break
+
+        if not found:
+            execute_input_not_understood_text(toNumber, fromNumber)
+            nextNode = tag_json['nextNode']
+
+        return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'], trigger_id=call_id)
     return executeFlow(flows['SMS'], flows['SMS']['nodes'][0]['node-id'], request, 'SMS') 
 
 """
@@ -295,7 +341,6 @@ def executeCallFlow():
     global waitOnEventJSONString
     global last_ids
     request_data_json = json.loads(request.data)
-    print(request_data_json)
 
     if request_data_json['eventType'] == "incomingcall":
         id_to_set = event_to_last_id["incomingcall"]
@@ -350,7 +395,6 @@ def executeCallFlow():
         return executeFlow(flows[tag_json['triggerMethod']], tag_json['nextNode'], request, tag_json['triggerMethod'], trigger_id=call_id) 
 
     elif request_data_json['eventType'] == "recording" and waitingOn == "recording":
-        print("recording")
         id_to_set = event_to_last_id["recording"]
         call_id = request_data_json[id_to_set]
         last_ids[id_to_set] = call_id
@@ -371,6 +415,7 @@ def executeCallFlow():
             nextNode = tag_json['nextNode']
 
         return executeFlow(flows[tag_json['triggerMethod']], nextNode, request, tag_json['triggerMethod'], trigger_id=call_id)    
+
 
     else:
         return '', 200
