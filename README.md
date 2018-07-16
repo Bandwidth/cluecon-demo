@@ -167,3 +167,6 @@ By going to your Ngrok url, you should see the flowchart creator for the applica
 7. Click "Get Numbers" at the bottom of the screen.
 
 You now have Bandwidth numbers to use for your flowchart.
+
+### Bandwidth Python SDK
+Although this project is written in python, it does not use Bandwidth's python SDK. If you wish to learn more about Bandwidth's python SDK in order to write more sophisticated applications, please visit https://dev.bandwidth.com/python-bandwidth/.
