@@ -41,7 +41,7 @@ Leave this command running, and open a new terminal window.
 2. Navigate to the directory that will hold the project.
 3. Run the following commands to setup the repo:
 ```
-git clone git@github.com:Bandwidth/cluecon-demo.git
+git clone https://github.com/Bandwidth/cluecon-demo.git
 cd cluecon-demo
 pip3 install -r requirements.txt
 ```
