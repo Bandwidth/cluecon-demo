@@ -48,7 +48,7 @@ pip3 install -r requirements.txt
 
 Running the command
 ```
-pip freeze
+pip3 freeze
 ```
 should result in an output like this:
 ```
