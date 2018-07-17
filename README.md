@@ -142,7 +142,7 @@ The APPLICATION_URL is your Ngrok url shown above.
 ### Launching the application
 Once setup with Ngrok and the environmental variables, launch the application by running the following command:
 ```
-python server/server.py
+python3 server/server.py
 ```
 
 You should be able to go to your https Ngrok url and see the home page of the application.
