@@ -43,15 +43,7 @@ Leave this command running, and open a new terminal window.
 ```
 git clone git@github.com:Bandwidth/cluecon-demo.git
 cd cluecon-demo
-pip install virtualenv
-virtualenv -p python3 cluecon-demo-virtualenv
-source cluecon-demo-virtualenv/bin/activate
-pip install -r requirements.txt
-```
-
-If done properly, the beginning of your prompt should look like this:
-```
-(cluecon-demo-virtualenv)
+pip3 install -r requirements.txt
 ```
 
 Running the command
@@ -148,7 +140,7 @@ After a few seconds, your file should download. Move this file to a place easily
 The APPLICATION_URL is your Ngrok url shown above.
 
 ### Launching the application
-Once setup with Ngrok, the cluecon-demo-virtualenv virtual environment, and the environmental variables, launch the application by running the following command:
+Once setup with Ngrok and the environmental variables, launch the application by running the following command:
 ```
 python server/server.py
 ```
