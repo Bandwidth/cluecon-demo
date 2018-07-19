@@ -340,7 +340,12 @@ def executeCallFlow():
     global recordingIndex
     global waitOnEventJSONString
     global last_ids
+    global fromNumber
+    global toNumber
     request_data_json = json.loads(request.data)
+    if 'from' in request_data_json and 'to' in request_data_json:
+        fromNumber = request_data_json['from']
+        toNumber = request_data_json['to']
 
     if request_data_json['eventType'] == "incomingcall":
         id_to_set = event_to_last_id["incomingcall"]
