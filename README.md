@@ -5,48 +5,51 @@
 ### User requirements
 * You must have a Bandwidth account (https://app.bandwidth.com/).
 * You must have a Google Cloud account (https://cloud.google.com/speech-to-text/).
-* You must have a Ngrok account (https://ngrok.com/).
+* An ngrok account is optional but recommended (https://ngrok.com/).
+    * Ngrok still needs to be installed on your system even without an ngrok account.
 
 ### System requirements
 * Python version = 3.7.0
 * Ngrok
 * git
 
-Instructions for downloading Python 3.7.0 can be found here https://www.python.org/downloads/.
+### Installation steps
 
-Instructions for downloading Ngrok can be found here https://ngrok.com/download.
+* Instructions for downloading Python 3.7.0 can be found here https://www.python.org/downloads/.
 
-Git can be downloaded by running the following command on your terminal:
-```
-sudo apt-get install git
-```
+* Instructions for downloading Ngrok can be found here https://ngrok.com/download.
 
-### Launching Ngrok
-After installing Ngrok, it can be launched by running the following command:
-```
-ngrok http 5000
-```
+* Instructions for downloading git can be found here https://git-scm.com/downloads.
 
-You will see a screen that looks like this:
-
-![alt text](images/ngrok_url_example.png)
-
-Take note of the HTTPS Forwarding url. You will need this later in setting up the demo.
-
-Leave this command running, and open a new terminal window.
-
-### Repo setup
+Instructions to download the project
 
 1. Open up a terminal.
 2. Navigate to the directory that will hold the project.
-3. Run the following commands to setup the repo:
+3. Run the following commands to download the project and navigate to the project directory:
 ```
 git clone https://github.com/Bandwidth/cluecon-demo.git
 cd cluecon-demo
-pip3 install -r requirements.txt
 ```
 
-Running the command
+### Optional: Setup a python virtualenv
+Optionally, a python virtual environment can be setup to avoid having pip installations be installed system-wide. After installing virtualenv, this can be done with the following commands:
+
+```
+virtualenv -p python3 <path-to-env>
+source <path-to-env>/bin/activate
+```
+
+By setting the virtualenv python to python3, you can replace "python3" with "python" and "pip3" with "pip" for the rest of this guide.
+
+### pip installations
+Run the command
+```
+pip3 install -r requirements.txt
+```
+in the cluecon-demo repo to install the required pip dependencies.
+
+
+After running the pip installations, running the command
 ```
 pip3 freeze
 ```
@@ -109,6 +112,21 @@ urllib3==1.23
 Werkzeug==0.14.1
 ```
 
+### Launching Ngrok
+After installing Ngrok, it can be launched by running the following command:
+```
+ngrok http 5000
+```
+
+You will see a screen that looks like this:
+
+![alt text](images/ngrok_url_example.png)
+
+Take note of the HTTPS Forwarding url. You will need this later in setting up the demo.
+
+Leave this command running, and open a new terminal window.
+
+
 ### Environmental variables
 
 The following environmental variables must be set:
@@ -134,7 +152,7 @@ Your Google application credentials file can be found here https://console.cloud
 6. Select your role ("owner" should suffice for this demo)
 7. Select "JSON" for key type.
 
-After a few seconds, your file should download. Move this file to a place easily accessible by the demo code, and set GOOGLE_APPLICATION_CREDENTIALS to this file (NOTE: you may need to surround the filename in quotes).
+After a few seconds, your file should download. Move this file to a place easily accessible by the demo code, and set GOOGLE_APPLICATION_CREDENTIALS to this file. You may need to surround the filename in quotes.
 
 
 The APPLICATION_URL is your Ngrok url shown above.
@@ -144,6 +162,14 @@ Once setup with Ngrok and the environmental variables, launch the application by
 ```
 python3 server/server.py
 ```
+
+Optionally, environmental variables can be set at the same time as launching the application as shown below:
+```
+BANDWIDTH_USER_ID=u-12345 BANDWIDTH_API_TOKEN=t-12345 BANDWIDTH_API_SECRET=12345 GOOGLE_APPLICATION_CREDENTIALS="server.json" APPLICATION_URL=url python3 server/server.py
+```
+
+Depending on your system credentials, you may need to prefix this command with sudo in order to make the speech recognition feature work.
+
 
 You should be able to go to your https Ngrok url and see the home page of the application.
 
@@ -160,5 +186,16 @@ By going to your Ngrok url, you should see the flowchart creator for the applica
 
 You now have Bandwidth numbers to use for your flowchart.
 
-### Bandwidth Python SDK
+### Assigning a Bandwidth Phone Number to your application
+After purchasing a Bandwidth number, you need to assign this number to your application. Launching the server will automatically create a Bandwidth application under the name "<ngrok-url> CLUECON DEMO". You can see this under the "Applications" tab after logging in to https://app.bandwidth.com.
+
+Clicking on the cluecon demo application should display application information. If you scroll down the page, you should see the "Associated Numbers" tab. Click the "+" sign to assign a number to this application.
+
+## Usage
+
+## Known issues
+* The application will not properly update nodes unless in fullscreen mode.
+
+
+## Bandwidth Python SDK
 Although this project is written in python, it does not use Bandwidth's python SDK. If you wish to learn more about Bandwidth's python SDK in order to write more sophisticated applications, please visit https://dev.bandwidth.com/python-bandwidth/.
