@@ -21,7 +21,7 @@
 
 * Instructions for downloading git can be found here https://git-scm.com/downloads.
 
-Instructions to download the project
+#### Instructions to download the project
 
 1. Open up a terminal.
 2. Navigate to the directory that will hold the project.
@@ -187,7 +187,12 @@ By going to your Ngrok url, you should see the flowchart creator for the applica
 You now have Bandwidth numbers to use for your flowchart.
 
 ### Assigning a Bandwidth Phone Number to your application
-After purchasing a Bandwidth number, you need to assign this number to your application. Launching the server will automatically create a Bandwidth application under the name "<ngrok-url> CLUECON DEMO". You can see this under the "Applications" tab after logging in to https://app.bandwidth.com.
+After purchasing a Bandwidth number, you need to assign this number to your application. Launching the server will automatically create a Bandwidth application under the name
+```
+<ngrok-url> CLUECON DEMO"
+```
+You can see this under the "Applications" tab after logging in to https://app.bandwidth.com.
+
 
 Clicking on the cluecon demo application should display application information. If you scroll down the page, you should see the "Associated Numbers" tab. Click the "+" sign to assign a number to this application.
 
