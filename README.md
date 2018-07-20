@@ -1,5 +1,6 @@
 # cluecon-demo
 
+![alt text](images/builderscreenshot.png)
 ## Project Setup
 
 ### User requirements
