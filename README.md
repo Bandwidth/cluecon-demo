@@ -201,6 +201,18 @@ Clicking on the cluecon demo application should display application information.
 Each time this application is ran with a different ngrok url, a new application is created. You will need to manually unassign your Bandwidth number from the previous application before assigning the number to the new application.
 
 ## Usage
+* Left click
+    * Drag node
+    * Select node
+    * Create a link between nodes
+    * Change a field in a node
+* Left click and drag
+    * Select multiple nodes
+* Right click
+    * Drag screen
+    * Detach a link between nodes
+* Delete key
+    * Delete selected nodes
 
 ## Known issues
 * The application will not properly update nodes unless in fullscreen mode.
