@@ -200,7 +200,60 @@ Clicking on the cluecon demo application should display application information.
 
 Each time this application is ran with a different ngrok url, a new application is created. You will need to manually unassign your Bandwidth number from the previous application before assigning the number to the new application.
 
-## Nodes 
+## Nodes
+Nodes other than the "Start" node are connected via the "Flow Input" and "Flow Output" buttons. The "Start" node is connected via the "Activate On" button. Left clicking on one of these buttons will create a link that you can attach to another node button of the opposite type.
+
+Naming your flow "default" will make it load immediately when accessing your server.
+
+For "Send SMS", "Send MMS", and "Call (Create)" nodes, if the "Start" node is activated on a "Call" or "SMS", the "From Number" and "To Number" fields can be left blank and will be automatically field when the flow is activated by a call or SMS. 
+
+* Start
+    * Activate On- Select how the flow is activated.
+        * Call- Activates flow when someone calls your Bandwidth number.
+        * SMS- Activates flow when someone texts your Bandwidth number.
+        * Now- Activates flow immediately.
+    * Flow Name- Optional name for your flow.
+        * If you have saved a previously named flow, you can load it here by typing that flow's name and clicking "Load".
+    * Save & Activate- Saves and activates your flow.
+
+* Listen
+    * NOTE- The "Flow Output" button IS NOT USED for "Listen" nodes. Instead, each output is sent through the listen parameters.
+    * Listen For- Selects how the node should listen.
+        * Voice- Listen for vocal user input.
+            * Keywords- Words to listen for.
+        * Keypad- Listen for phone keypad input.
+            * Max Digits- Maximum number of digits to listen for.
+            * Terminating Digits- Digit that ends the user input.
+            * Keypad Entry- Digits to listen for.
+        * Text- Listen for keywords in a text message.
+            * Keywords- Text words to listen for.
+    * Duration (Seconds)- How long in seconds the listen node should wait.
+
+* Wait
+    * Seconds- Number of seconds to wait for.
+
+* Call
+    * Create- Creates a call.
+        * From Number- Bandwidth number to make the call.
+        * To Number- Recipient of the call.
+    * Answer- Answers an incoming call.
+    * Hangup- Hangup from the current call.
+
+* Say/Play
+    * Action- Audio action to execute.
+        * Say- Says text.
+            * Gender- Male or female voice to speak.
+            * Text to Say- User input of text to say
+        * Play- Plays audio from an audio url.
+            * Audio Url- URL of audio file.
+
+* Send
+    * From Number- Bandwidth number to send a message.
+    * To Number- Recipient of the text message.
+    * Text- Contents of the text message.
+
+* Send Media
+    * Same as Send node, but sends MMS instead of SMS
 
 ## User Operations
 * Left click
