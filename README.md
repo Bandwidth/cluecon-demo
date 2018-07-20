@@ -189,7 +189,7 @@ You now have Bandwidth numbers to use for your flowchart.
 ### Assigning a Bandwidth Phone Number to your application
 After purchasing a Bandwidth number, you need to assign this number to your application. Launching the server will automatically create a Bandwidth application under the name
 ```
-<ngrok-url> CLUECON DEMO"
+<ngrok-url> CLUECON DEMO
 ```
 You can see this under the "Applications" tab after logging in to https://app.bandwidth.com.
 
