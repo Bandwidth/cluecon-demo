@@ -197,6 +197,9 @@ You can see this under the "Applications" tab after logging in to https://app.ba
 
 Clicking on the cluecon demo application should display application information. If you scroll down the page, you should see the "Associated Numbers" tab. Click the "+" sign to assign a number to this application.
 
+
+Each time this application is ran with a different ngrok url, a new application is created. You will need to manually unassign your Bandwidth number from the previous application before assigning the number to the new application
+
 ## Usage
 
 ## Known issues
