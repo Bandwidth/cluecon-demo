@@ -14,6 +14,8 @@
 * Ngrok
 * git
 
+If you are setting this up on a Raspberry Pi, please download the desktop version of Raspbian (https://www.raspberrypi.org/downloads/raspbian/).
+
 ### Installation steps
 
 * Instructions for downloading Python 3.7.0 can be found here https://www.python.org/downloads/.
