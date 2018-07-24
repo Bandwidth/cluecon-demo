@@ -34,7 +34,27 @@ app_exists = False
 for application in current_applications:
     if application['name'] == application_name:
         app_exists = True
-        break
+
+    elif application['name'].endswith("Cluecon Demo"):
+        phone_url = "https://api.catapult.inetwork.com/v1/users/<userId>/phoneNumbers/".replace("<userId>", BANDWIDTH_USER_ID)
+        current_phones = requests.get(phone_url, auth=u_auth).json()
+
+        applicationId = application['id']
+        for phone in current_phones:
+            if 'applicationId' in phone and phone['applicationId'] == applicationId:
+                requests.post(
+                    phone_url + phone['id'],
+                    auth=u_auth,
+                    json={
+                        "applicationId": ""
+                    }
+                )
+                
+
+        r = requests.delete(
+            app_url + applicationId,
+            auth=u_auth,
+        )
 
 if not app_exists:
     body = {
