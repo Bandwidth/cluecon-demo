@@ -274,7 +274,7 @@ For "Send SMS", "Send MMS", and "Call (Create)" nodes, if the "Start" node is ac
 ## Known issues
 * The application will not properly update nodes unless in fullscreen mode.
 * Sometimes when creating a new node while a previous node is present on the center of the screen, you will not be able to select anymore nodes.
-
+* Double quote characters (") and new line characters cause JSON compile issues
 
 ## Bandwidth Python SDK
 Although this project is written in python, it does not use Bandwidth's python SDK. If you wish to learn more about Bandwidth's python SDK in order to write more sophisticated applications, please visit https://dev.bandwidth.com/python-bandwidth/.
